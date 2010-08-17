@@ -33,12 +33,21 @@ public class TextObj implements ScreenObj {
 	float lineHeight;
 	float maxLineWidth;
 	float pad;
-	int borderColor, bgColor, textColor;
+	int bgColor, borderColor, textColor;
 
+	static final int defaultBorderColor = Color.argb(64 ,255, 255, 255);
+	static final int defaultBgColor = Color.argb(160 ,32, 32, 32);
+	static final int defaultTextColor = Color.rgb(255, 255, 255);
+	
+	/* old color scheme 
+	static final int defaultBorderColor = Color.rgb(255, 255, 255);
+	static final int defaultBgColor = Color.rgb(0, 0, 0);
+	static final int defaultTextColor = Color.rgb(255, 255, 255);
+	 */
+	
 	public TextObj(String txtInit, float fontSizeInit, float maxWidth,
 			PaintScreen dw) {
-		this(txtInit, fontSizeInit, maxWidth, Color.rgb(255, 255, 255), Color
-				.rgb(0, 0, 0), Color.rgb(255, 255, 255),
+		this(txtInit, fontSizeInit, maxWidth, defaultBorderColor,  defaultBgColor, defaultTextColor,
 				dw.getTextAsc() / 2, dw);
 	}
 

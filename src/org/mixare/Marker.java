@@ -43,8 +43,9 @@ public class Marker {
 	MixVector cMarker = new MixVector();
 	MixVector signMarker = new MixVector();
 	MixVector oMarker = new MixVector();
-	static int color = Color.rgb(255, 0, 0), decInnerColor = Color.rgb(255, 0, 0), decWorkColor = Color.rgb(50, 50, 255);
-
+	static int color = Color.argb(160, 255, 10, 10), decInnerColor = Color.rgb(255, 0, 0), decWorkColor = Color.rgb(50, 50, 255);
+	static int shadowColor = Color.argb(160, 255, 255, 255), shadowWidth = 1;
+	
 	Label txtLab = new Label();
 	
 	// Temp properties
@@ -164,7 +165,7 @@ public class Marker {
 			
 			dw.setStrokeWidth(maxHeight / 10f);
 			dw.setFill(false);
-			dw.paintCircle(cMarker.x, cMarker.y, maxHeight / 1.5f);
+			dw.paintCircleWithShadow(cMarker.x, cMarker.y, maxHeight / 1.5f,shadowColor,shadowWidth);
 
 			float currentAngle = MixUtils.getAngle(cMarker.x, cMarker.y, signMarker.x, signMarker.y);
 

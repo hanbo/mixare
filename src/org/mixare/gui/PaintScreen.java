@@ -85,9 +85,32 @@ public class PaintScreen {
 	public void paintCircle(float x, float y, float radius) {
 		canvas.drawCircle(x, y, radius, paint);
 	}
+	
+	public void paintCircleWithShadow(float x, float y, float radius, int color, int width) {
+		paint.setShadowLayer(width, 0, 0, color);
+		canvas.drawCircle(x, y, radius, paint);
+		paint.clearShadowLayer();
+	}
 
 	public void paintText(float x, float y, String text) {
 		canvas.drawText(text, x, y, paint);
+	}
+	
+	public void paintTextWithShadow(float x, float y, String text, int color, int width) {
+	
+		// Draw the text four times with shadow in each corner 
+		// to increase contrast and readability
+		
+		paint.setShadowLayer(width, 1, 1, color);
+		canvas.drawText(text, x, y, paint);
+		paint.setShadowLayer(width, 1,-1, color);
+		canvas.drawText(text, x, y, paint);
+		paint.setShadowLayer(width,-1, 1, color);
+		canvas.drawText(text, x, y, paint);
+		paint.setShadowLayer(width,-1,-1, color);
+		canvas.drawText(text, x, y, paint);
+		paint.clearShadowLayer();
+
 	}
 
 	public void paintObj(ScreenObj obj, float x, float y, float rotation,
