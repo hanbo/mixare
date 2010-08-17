@@ -109,7 +109,14 @@ public class PhysicalPlace {
 		float[] x = new float[1];
 		Location.distanceBetween(org.getLatitude(), org.getLongitude(), org
 				.getLatitude(), gp.getLongitude(), x);
-		double y = gp.getAltitude() - org.getAltitude();
+
+		// When data sources provide altitude 0.0, it usually means that altitude is unknown
+		// In this case the altitude should be set to ground level (y=0) or slightly above
+		// and not to the difference to the current GPS altitude
+		double y=0;
+		if (gp.getAltitude()!=0)
+			y = gp.getAltitude() - org.getAltitude();
+
 		if (org.getLatitude() < gp.getLatitude())
 			z[0] *= -1;
 		if (org.getLongitude() > gp.getLongitude())
