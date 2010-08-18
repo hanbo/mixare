@@ -20,7 +20,6 @@ package org.mixare;
 
 import static android.hardware.SensorManager.SENSOR_DELAY_GAME;
 
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
@@ -66,8 +65,7 @@ import android.widget.FrameLayout;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
-public class MixView extends Activity implements SensorEventListener,
-LocationListener {
+public class MixView extends Activity implements SensorEventListener,LocationListener {
 
 	CameraSurface camScreen;
 	AugmentedView augScreen;
@@ -87,7 +85,7 @@ LocationListener {
 	private SensorManager sensorMgr;
 	private List<Sensor> sensors;
 	private Sensor sensorGrav, sensorMag;
-	private LocationManager locationMgr;
+	public static LocationManager locationMgr;
 	boolean isGpsEnabled = false;
 
 	int rHistIdx = 0;
@@ -204,15 +202,19 @@ LocationListener {
         alert.show();
 	}
 	
-
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		try {
+			
 			final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 			this.mWakeLock = pm.newWakeLock(
 					PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "My Tag");
+			this.mWakeLock.acquire();
+			locationMgr=(LocationManager)getSystemService(Context.LOCATION_SERVICE);
+			locationMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000,10, this);
+
 			killOnError();
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
 			
@@ -247,6 +249,7 @@ LocationListener {
 			
 			if (!isInited) {
 				ctx = new MixContext(this);
+
 				ctx.downloadManager = new DownloadManager(ctx);
 				
 				 
@@ -274,29 +277,17 @@ LocationListener {
 			    editor.putBoolean("firstAccess", true);
 			    editor.commit();
 			} 
-		    
+
 			if(ctx.isActualLocation()==false){
-			//	locationUpdate();
+			//	locationUpdate?
 				Toast.makeText( this, getString(view.CONNECITON_GPS_DIALOG_TEXT), Toast.LENGTH_LONG ).show();
 			}		
-			
+
 		} catch (Exception ex) {
 			doError(ex);
 		}
 	}
 	
-	public void locationUpdate(){
-		try{
-			LocationManager locManager = (LocationManager)getSystemService(LOCATION_SERVICE);
-			locManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000000, 100, this);
-			Log.d("GPS Msg", "Location update succeeded");
-
-		}
-		catch(Exception ex){
-			Log.d("GPS Msg", "Location update failed");
-			ex.printStackTrace();
-		}
-	}
 
 	@Override
 	protected void onPause() {
@@ -343,6 +334,7 @@ LocationListener {
 
 		try {
 			this.mWakeLock.acquire();
+
 			killOnError();
 			ctx.mixView = this;
 			view.doStart();
@@ -391,21 +383,21 @@ LocationListener {
 
 				c.setAccuracy(Criteria.ACCURACY_FINE);
 				//c.setBearingRequired(true);
-
+				
 				locationMgr = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+				locationMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000,10, this);
+
 				String bestP = locationMgr.getBestProvider(c, true);
 				isGpsEnabled = locationMgr.isProviderEnabled(bestP);
 
-				if (isGpsEnabled) {
-					locationMgr.requestLocationUpdates(bestP, 100, 1, this);
-				}
-				
+
 				/*defaulting to our place*/
 				Location hardFix = new Location("reverseGeocoded");
 				hardFix.setLatitude(46.47122383117541);
 				hardFix.setLongitude(11.260278224944742);
 				hardFix.setAltitude(300);
 
+				
 				try {
 					ctx.curLoc = new Location(locationMgr.getLastKnownLocation(bestP));
 				} catch (Exception ex2) {
@@ -472,7 +464,6 @@ LocationListener {
 			MenuItem item7 =menu.add(base, base+6, base+6,  getString(view.MENU_ITEM_7));
 
 			/*assign icons to the menu items*/
-			
 			item1.setIcon(android.R.drawable.ic_menu_edit);
 			item2.setIcon(android.R.drawable.ic_menu_view);
 			item3.setIcon(android.R.drawable.ic_menu_mapmode);
@@ -550,8 +541,9 @@ LocationListener {
 				break;
 			/*GPS Information*/
 			case 6:
+				ctx.setCurrentGPSInfo();
 				AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setMessage(getString(view.GENERAL_INFO_TEXT)+"\n\n" +
+				builder.setMessage(getString(view.GENERAL_INFO_TEXT)+ "\n\n" +
 							getString(view.GPS_LONGITUDE) + GPS_LONGITUDE + "\n" +
 							getString(view.GPS_LATITUDE) + GPS_LATITUDE + "\n" +
 							getString(view.GPS_ALTITUDE)+ GPS_ALTITUDE + "m\n" +
@@ -725,7 +717,6 @@ LocationListener {
 				ctx.rotationM.set(smoothR);
 			}
 		} catch (Exception ex) {
-			//doError(ex);
 			ex.printStackTrace();
 		}
 	}
@@ -771,20 +762,17 @@ LocationListener {
 			}
 
 		} catch (Exception ex) {
-			//doError(ex);
 			ex.printStackTrace();
 			return super.onKeyDown(keyCode, event);
 		}
 	}
 
 	public void onProviderDisabled(String provider) {
-		isGpsEnabled = locationMgr
-		.isProviderEnabled(LocationManager.GPS_PROVIDER);
+		isGpsEnabled = locationMgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
 	}
 
 	public void onProviderEnabled(String provider) {
-		isGpsEnabled = locationMgr
-		.isProviderEnabled(LocationManager.GPS_PROVIDER);
+		isGpsEnabled = locationMgr.isProviderEnabled(LocationManager.GPS_PROVIDER);
 	}
 
 	public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -794,8 +782,6 @@ LocationListener {
 	public void onLocationChanged(Location location) {
 		try {
 			killOnError();
-			//locationUpdate();
-
 			if (LocationManager.GPS_PROVIDER.equals(location.getProvider())) {
 				synchronized (ctx.curLoc) {
 					ctx.curLoc = location;
@@ -807,10 +793,9 @@ LocationListener {
 		}
 	}
 
-
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }
@@ -992,12 +977,12 @@ class AugmentedView extends View {
 				Paint zoomPaint = new Paint();
 				zoomPaint.setColor(Color.WHITE);
 				zoomPaint.setTextSize(14);
-				canvas.drawText("0km", 10, canvas.getHeight()-65, zoomPaint);
-				canvas.drawText("80km", canvas.getWidth()-40, canvas.getHeight()-65, zoomPaint);
+				canvas.drawText("0km", canvas.getWidth()/100*4, canvas.getHeight()/100*85, zoomPaint);
+				canvas.drawText("80km", canvas.getWidth()/100*99+25, canvas.getHeight()/100*85, zoomPaint);
 				
-				int height= canvas.getHeight()-65;
-				if(MixView.zoomProgress >97||MixView.zoomProgress <5){
-					height = canvas.getHeight()-80;
+				int height= canvas.getHeight()/100*85;
+				if(MixView.zoomProgress >92||MixView.zoomProgress <6){
+					height = canvas.getHeight()/100*80;
 				}
 				canvas.drawText(MixView.zoomLevel,  (canvas.getWidth())/100*MixView.zoomProgress+20, height, zoomPaint);
 			}
