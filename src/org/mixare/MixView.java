@@ -27,10 +27,8 @@ import java.util.Vector;
 
 import org.mixare.R.drawable;
 import org.mixare.gui.PaintScreen;
-import org.mixare.gui.TextObj;
 import org.mixare.render.Matrix;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.SearchManager;
 import android.content.Context;
@@ -64,18 +62,23 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
+import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.FrameLayout;
 import android.widget.SeekBar;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class MixView extends Activity implements SensorEventListener,LocationListener, OnTouchListener{
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.MapActivity;
+import com.google.android.maps.MapView;
+
+public class MixView extends MapActivity implements SensorEventListener,LocationListener, OnTouchListener{
 
 	CameraSurface camScreen;
 	AugmentedView augScreen;
+	GMapView gmapview;
 
 	static boolean isInited = false;
 	static MixContext ctx;
@@ -242,11 +245,26 @@ public class MixView extends Activity implements SensorEventListener,LocationLis
 
 			camScreen = new CameraSurface(this);
 			augScreen = new AugmentedView(this);
+			gmapview = new GMapView(this,"0327vO6h2PcKeMFBCtVK4XcPTq-b2tsXrsdbSqw");
+			
+			gmapview.setOnTouchListener(new View.OnTouchListener() {				
+				@Override
+				public boolean onTouch(View v, MotionEvent event) {
+					Intent intent = new Intent(MixView.this, MixMap.class); 
+					startActivityForResult(intent, 20);
+					Log.w(TAG,"Onclick");
+					((GMapView)v).getController().setCenter(new GeoPoint((int)(ctx.curLoc.getLatitude()*1e6), (int)(ctx.curLoc.getLongitude()*1e6)));
+					return true;
+				}
+			});
+			
 			setContentView(camScreen);
 
 			addContentView(augScreen, new LayoutParams(
 					LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
+			addContentView(gmapview, new FrameLayout.LayoutParams(125,125,Gravity.RIGHT));
+			
 			addContentView(FL, new FrameLayout.LayoutParams(
 					LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT,
 					Gravity.BOTTOM));
@@ -299,7 +317,7 @@ public class MixView extends Activity implements SensorEventListener,LocationLis
 	}
 
 	@Override
-	protected void onNewIntent(Intent intent) {
+	public void onNewIntent(Intent intent) {
 	    setIntent(intent);
 	    handleIntent(intent);
 	}
@@ -498,7 +516,10 @@ public class MixView extends Activity implements SensorEventListener,LocationLis
 			}
 		}
 		
-		Log.d("-------------------------------------------","resume");
+		Location loc = locationMgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+		gmapview.getController().setCenter(new GeoPoint((int)(loc.getLatitude()*1e6),(int)(loc.getLongitude()*1e6)));
+		
+		Log.w("-------------------------------------------","resume");
 		if(view.frozen&&searchNotificationTxt==null){
 		
 			searchNotificationTxt = new TextView(this);
@@ -844,6 +865,12 @@ public float calcZoomLevel(){
 
 		return false;
 	}
+
+	@Override
+	protected boolean isRouteDisplayed() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
 
 class CameraSurface extends SurfaceView implements SurfaceHolder.Callback {
@@ -1045,5 +1072,53 @@ class AugmentedView extends View{
 		} catch (Exception ex) {
 			app.doError(ex);
 		}
+	}
+}
+
+class GMapView extends MapView implements LocationListener{
+	
+	MixView app;
+
+	public GMapView(Context context, String apiKey) {
+		super(context, apiKey);
+		
+		try {
+			app = (MixView) context;
+
+			app.killOnError();
+		} catch (Exception ex) {
+			app.doError(ex);
+		}
+		
+		getController().setZoom(16);
+		if(MixView.ctx != null)
+			getController().setCenter(new GeoPoint((int)(MixView.ctx.curLoc.getLatitude()*1000000.0), (int)(MixView.ctx.curLoc.getLongitude()*1000000.0)));
+		else {
+			LocationManager locationMgr = (LocationManager) app.getSystemService(Context.LOCATION_SERVICE);
+			
+			Location loc = locationMgr.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+			getController().setCenter(new GeoPoint((int)(loc.getLatitude()*1e6),(int)(loc.getLongitude()*1e6)));
+		}
+
+		setBuiltInZoomControls(false);
+		setSatellite(true);
+	}
+    
+	@Override
+	public void onLocationChanged(Location location) {
+		getController().setCenter(new GeoPoint((int)(location.getLatitude()*1000000.0), (int)(location.getLongitude()*1000000.0)));
+		
+	}
+	@Override
+	public void onProviderDisabled(String provider) {
+		
+	}
+	@Override
+	public void onProviderEnabled(String provider) {
+		
+	}
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
+		
 	}
 }

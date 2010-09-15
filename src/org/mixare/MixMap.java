@@ -252,7 +252,7 @@ public class MixMap extends MapActivity implements OnTouchListener{
 		else{
 			dataView.jLayer.markers = markerList;
 			dataView.frozen = true;
-			
+
 			finish();
 			Intent intent1 = new Intent(this, MixMap.class); 
 			startActivityForResult(intent1, 42);
